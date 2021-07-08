@@ -1,9 +1,25 @@
 const mongoose = require('mongoose');
 const Store = mongoose.model('Store');
+const multer = require('multer');
+const jimp = require('jimp');
+const uuid = require('uuid');
 
+const multerOptions = {
+  storage: multer.memoryStorage(),
+  fileFilter: (req, file, next) => {
+    const isPhoto = file.mimetype.startsWith('image/');
+    if(isPhoto) {
+      next(null, true);
+    } else {
+      next({message: 'That filetype isn\'t allowed!' }, false);
+    }
+  }
+};
 exports.homePage = (req, res, next) => {
   res.render('index');
 };
+
+exports.upload = multer(multerOptions).single('photo');
 
 exports.addStore = (req, res, next) => {
   res.render('editStore', { title: 'Add Store'});
@@ -30,6 +46,8 @@ exports.editStore = async (req, res, next) => {
 }
 
 exports.updateStore = async (req, res , next) => {
+  // Set the location data to be a point
+  req.body.location.type = 'Point';
   //find and update the store
   const store = await Store.findOneAndUpdate({ _id: req.params.id }, req.body,
     {
